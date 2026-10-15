@@ -1,19 +1,14 @@
 package com.example.ui.screens
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -27,6 +22,8 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CutCornerShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -60,10 +57,8 @@ import com.example.ui.theme.TextWhite
 import kotlinx.coroutines.delay
 import kotlin.math.cos
 import kotlin.math.sin
-import kotlin.random.Random
 
 enum class BootPhase {
-    INIT_BLACK,
     MINIMAL_X,
     SYSTEM_LOADING,
     HEXAGON_CIPHER,
@@ -74,7 +69,8 @@ enum class BootPhase {
 }
 
 /**
- * Watch Dogs ctOS Boot Animation matching the user's video,
+ * Watch Dogs ctOS Boot Animation matching the user's video:
+ * Fast, interactive, non-blocking with tap-anywhere skip,
  * concluding with the DedSec boxed letter-by-letter decryption sequence.
  */
 @Composable
@@ -85,6 +81,7 @@ fun BootScreen(
 ) {
     var phase by remember { mutableStateOf(BootPhase.MINIMAL_X) }
     var cipherString by remember { mutableStateOf("Lxrqgeukf") }
+    var bootProgress by remember { mutableStateOf(0.1f) }
 
     // Target boxed letters sequence: D E D S E C / c T O S
     val targetWords = listOf(
@@ -95,53 +92,57 @@ fun BootScreen(
     // Revealed index counter for the boxed letters
     var revealedCount by remember { mutableIntStateOf(0) }
     val totalLetters = targetWords.sumOf { it.size }
-
-    // Scramble character randomizer ticker
     val cipherCharset = "0123456789ABCDEF$#@%&*?><Ø§"
 
+    // Safe, snappy boot progression: total ~3.5 seconds, or instant on tap!
     LaunchedEffect(Unit) {
         soundManager.playBootBeep()
 
-        // Phase 1: Minimalist 'X' (approx 1.8s)
+        // Phase 1: Minimalist 'X' (500ms)
         phase = BootPhase.MINIMAL_X
-        delay(1800)
+        bootProgress = 0.15f
+        delay(550)
 
-        // Phase 2: System Loading stepped bars (approx 2s)
+        // Phase 2: System Loading stepped bars (600ms)
         phase = BootPhase.SYSTEM_LOADING
         soundManager.playTerminalBeep()
-        delay(2000)
+        bootProgress = 0.35f
+        delay(650)
 
-        // Phase 3: Hexagon Cipher text (approx 2s)
+        // Phase 3: Hexagon Cipher text (650ms)
         phase = BootPhase.HEXAGON_CIPHER
         soundManager.playDataStream()
-        repeat(8) {
-            val randomChars = (1..9).map { cipherCharset.random() }.joinToString("")
-            cipherString = randomChars
-            delay(220)
+        bootProgress = 0.55f
+        repeat(4) {
+            cipherString = (1..9).map { cipherCharset.random() }.joinToString("")
+            delay(150)
         }
 
-        // Phase 4: Horizontal beam + "ctOS" logo (approx 2.5s)
+        // Phase 4: Horizontal beam + "ctOS" logo (700ms)
         phase = BootPhase.CTOS_BEAM_LOGO
         soundManager.playBootBeep()
-        delay(2600)
+        bootProgress = 0.75f
+        delay(700)
 
-        // Phase 5: Isometric Wireframe Polyhedron in circle (approx 2.2s)
+        // Phase 5: Isometric Wireframe Polyhedron (600ms)
         phase = BootPhase.ISOMETRIC_EMBLEM
         soundManager.playSonarPing()
-        delay(2200)
+        bootProgress = 0.90f
+        delay(600)
 
         // Phase 6: DedSec Hijack & Boxed Letters Decryption
         phase = BootPhase.DEDSEC_HIJACK_BOXES
         soundManager.playAccessGranted()
+        bootProgress = 1.0f
 
-        // Reveal letters in boxes one by one with tactile sound
+        // Rapid letter reveal
         for (i in 1..totalLetters) {
-            delay(160)
+            delay(80)
             revealedCount = i
             soundManager.playKeyClick()
         }
 
-        delay(1200)
+        delay(700)
         phase = BootPhase.BOOT_COMPLETE
         onBootFinished()
     }
@@ -150,52 +151,57 @@ fun BootScreen(
         modifier = modifier
             .fillMaxSize()
             .background(Color.Black)
+            .clickable { onBootFinished() } // TAP ANYWHERE TO SKIP
             .testTag("boot_screen"),
         contentAlignment = Alignment.Center
     ) {
-        // Skip Button in Top-Right
-        Surface(
-            color = Color.Black.copy(alpha = 0.7f),
-            shape = CutCornerShape(4.dp),
-            border = BorderStroke(1.dp, TextMuted),
+        // Top Bar: System Status & Skip Chip
+        Row(
             modifier = Modifier
-                .align(Alignment.TopEnd)
-                .padding(top = 48.dp, end = 20.dp)
-                .clickable { onBootFinished() }
-                .testTag("skip_boot_button")
+                .fillMaxWidth()
+                .align(Alignment.TopCenter)
+                .padding(top = 42.dp, start = 20.dp, end = 20.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "SKIP [>>]",
+                text = "cTOS 2.0 // BOOT SEQUENCE",
                 style = MaterialTheme.typography.labelSmall.copy(
                     color = TextMuted,
-                    fontSize = 11.sp
-                ),
-                modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                    fontSize = 11.sp,
+                    letterSpacing = 1.sp
+                )
             )
+
+            Surface(
+                color = Color.White.copy(alpha = 0.12f),
+                shape = CutCornerShape(4.dp),
+                border = BorderStroke(1.dp, Color.White.copy(alpha = 0.4f)),
+                modifier = Modifier
+                    .clickable { onBootFinished() }
+                    .testTag("skip_boot_button")
+            ) {
+                Text(
+                    text = "TAP TO SKIP [▶▶]",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
+                )
+            }
         }
 
+        // Center Content based on BootPhase
         when (phase) {
-            BootPhase.INIT_BLACK -> {
-                // Black screen
-            }
-
             BootPhase.MINIMAL_X -> {
-                // Video Frame 00:01: Clean white 'X'
+                // Video Frame 00:01: Minimal white 'X'
                 Canvas(modifier = Modifier.size(90.dp)) {
                     val w = size.width
                     val h = size.height
-                    drawLine(
-                        color = Color.White,
-                        start = Offset(0f, 0f),
-                        end = Offset(w, h),
-                        strokeWidth = 2.2f
-                    )
-                    drawLine(
-                        color = Color.White,
-                        start = Offset(0f, h),
-                        end = Offset(w, 0f),
-                        strokeWidth = 2.2f
-                    )
+                    drawLine(color = Color.White, start = Offset(0f, 0f), end = Offset(w, h), strokeWidth = 2.5f)
+                    drawLine(color = Color.White, start = Offset(0f, h), end = Offset(w, 0f), strokeWidth = 2.5f)
                 }
             }
 
@@ -206,30 +212,13 @@ fun BootScreen(
                     verticalArrangement = Arrangement.Center
                 ) {
                     Column(horizontalAlignment = Alignment.Start) {
-                        Surface(
-                            color = Color.White,
-                            modifier = Modifier
-                                .width(28.dp)
-                                .height(12.dp)
-                        ) {}
+                        Surface(color = Color.White, modifier = Modifier.width(28.dp).height(12.dp)) {}
                         Spacer(modifier = Modifier.height(3.dp))
-                        Surface(
-                            color = Color.White,
-                            modifier = Modifier
-                                .width(56.dp)
-                                .height(12.dp)
-                        ) {}
+                        Surface(color = Color.White, modifier = Modifier.width(56.dp).height(12.dp)) {}
                         Spacer(modifier = Modifier.height(3.dp))
-                        Surface(
-                            color = Color.White,
-                            modifier = Modifier
-                                .width(88.dp)
-                                .height(12.dp)
-                        ) {}
+                        Surface(color = Color.White, modifier = Modifier.width(88.dp).height(12.dp)) {}
                     }
-
                     Spacer(modifier = Modifier.height(14.dp))
-
                     Text(
                         text = "System Loading",
                         style = MaterialTheme.typography.titleMedium.copy(
@@ -244,10 +233,7 @@ fun BootScreen(
 
             BootPhase.HEXAGON_CIPHER -> {
                 // Video Frame 00:05: Wireframe irregular polygon / hexagon with cipher text
-                Box(
-                    modifier = Modifier.size(190.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.size(190.dp), contentAlignment = Alignment.Center) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val radius = size.width * 0.45f
@@ -262,14 +248,13 @@ fun BootScreen(
                         path.close()
                         drawPath(path = path, color = Color.White, style = Stroke(width = 2f))
                     }
-
                     Text(
                         text = cipherString,
                         style = MaterialTheme.typography.bodyLarge.copy(
                             color = Color.White,
                             fontFamily = FontFamily.Monospace,
                             fontWeight = FontWeight.SemiBold,
-                            fontSize = 16.sp
+                            fontSize = 17.sp
                         )
                     )
                 }
@@ -278,31 +263,21 @@ fun BootScreen(
             BootPhase.CTOS_BEAM_LOGO -> {
                 // Video Frame 00:09: Horizontal light beam + "ct OS" + "ctOS Authorized Device"
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(140.dp),
+                    modifier = Modifier.fillMaxWidth().height(140.dp),
                     contentAlignment = Alignment.CenterStart
                 ) {
-                    // Glowing beam extending from left edge
                     Box(
                         modifier = Modifier
                             .fillMaxWidth(0.68f)
                             .height(44.dp)
                             .background(
                                 Brush.horizontalGradient(
-                                    colors = listOf(
-                                        Color.White,
-                                        Color.White,
-                                        Color.White.copy(alpha = 0.9f),
-                                        Color.Transparent
-                                    )
+                                    colors = listOf(Color.White, Color.White, Color.White.copy(alpha = 0.9f), Color.Transparent)
                                 )
                             )
                     )
-
                     Row(
-                        modifier = Modifier
-                            .padding(start = 130.dp),
+                        modifier = Modifier.padding(start = 120.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Column {
@@ -344,18 +319,12 @@ fun BootScreen(
 
             BootPhase.ISOMETRIC_EMBLEM -> {
                 // Video Frame 00:11: Circle with 3D wireframe isometric polyhedron
-                Box(
-                    modifier = Modifier.size(170.dp),
-                    contentAlignment = Alignment.Center
-                ) {
+                Box(modifier = Modifier.size(170.dp), contentAlignment = Alignment.Center) {
                     Canvas(modifier = Modifier.fillMaxSize()) {
                         val center = Offset(size.width / 2f, size.height / 2f)
                         val outerRadius = size.width * 0.46f
 
-                        // Outer thin circle
                         drawCircle(color = Color.White, radius = outerRadius, center = center, style = Stroke(width = 1.8f))
-
-                        // Inner isometric cube / polyhedron lines
                         val r = outerRadius * 0.58f
                         val top = Offset(center.x, center.y - r)
                         val bottom = Offset(center.x, center.y + r)
@@ -364,7 +333,6 @@ fun BootScreen(
                         val rightTop = Offset(center.x + r * 0.866f, center.y - r * 0.5f)
                         val rightBottom = Offset(center.x + r * 0.866f, center.y + r * 0.5f)
 
-                        // Outer hexagon boundary of cube
                         val hexPath = Path().apply {
                             moveTo(top.x, top.y)
                             lineTo(rightTop.x, rightTop.y)
@@ -375,13 +343,9 @@ fun BootScreen(
                             close()
                         }
                         drawPath(hexPath, color = Color.White, style = Stroke(width = 1.8f))
-
-                        // Internal Y axes
                         drawLine(color = Color.White, start = center, end = top, strokeWidth = 1.8f)
                         drawLine(color = Color.White, start = center, end = leftBottom, strokeWidth = 1.8f)
                         drawLine(color = Color.White, start = center, end = rightBottom, strokeWidth = 1.8f)
-
-                        // Internal diagonals
                         drawLine(color = Color.White, start = leftTop, end = center, strokeWidth = 1.2f)
                         drawLine(color = Color.White, start = rightTop, end = center, strokeWidth = 1.2f)
                         drawLine(color = Color.White, start = bottom, end = center, strokeWidth = 1.2f)
@@ -394,7 +358,7 @@ fun BootScreen(
                 Column(
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center,
-                    modifier = Modifier.padding(24.dp)
+                    modifier = Modifier.padding(20.dp)
                 ) {
                     Text(
                         text = "[!] cTOS 2.0 PROTOCOL HIJACKED",
@@ -405,23 +369,20 @@ fun BootScreen(
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
 
                     Text(
                         text = "DEDSEC OPERATIVE SYSTEM READY",
-                        style = MaterialTheme.typography.bodySmall.copy(
-                            color = TextMuted
-                        )
+                        style = MaterialTheme.typography.bodySmall.copy(color = TextMuted)
                     )
 
-                    Spacer(modifier = Modifier.height(28.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
 
-                    // Row 1: [D][E][D][S][E][C]
                     var globalLetterCounter = 0
-                    targetWords.forEachIndexed { wordIdx, wordLetters ->
+                    targetWords.forEachIndexed { _, wordLetters ->
                         Row(
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.padding(vertical = 6.dp)
+                            modifier = Modifier.padding(vertical = 5.dp)
                         ) {
                             wordLetters.forEach { letter ->
                                 val letterGlobalIndex = globalLetterCounter
@@ -458,7 +419,7 @@ fun BootScreen(
                                     color = boxBgColor,
                                     shape = CutCornerShape(4.dp),
                                     border = BorderStroke(1.5.dp, boxBorderColor),
-                                    modifier = Modifier.size(44.dp)
+                                    modifier = Modifier.size(42.dp)
                                 ) {
                                     Box(
                                         contentAlignment = Alignment.Center,
@@ -478,30 +439,55 @@ fun BootScreen(
                         }
                     }
 
-                    Spacer(modifier = Modifier.height(36.dp))
+                    Spacer(modifier = Modifier.height(28.dp))
 
-                    // Touch to proceed banner once all letters resolved
-                    if (revealedCount >= totalLetters) {
-                        Surface(
-                            color = NeonGreen.copy(alpha = 0.15f),
-                            shape = CutCornerShape(4.dp),
-                            border = BorderStroke(1.dp, NeonGreen),
-                            modifier = Modifier
-                                .clickable { onBootFinished() }
-                                .padding(horizontal = 20.dp, vertical = 8.dp)
-                        ) {
-                            Text(
-                                text = "INITIALIZATION COMPLETE // TOUCH TO ENTER",
-                                style = MaterialTheme.typography.labelMedium.copy(
-                                    color = NeonGreenBright,
-                                    fontWeight = FontWeight.Bold
-                                ),
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
-                            )
-                        }
+                    Surface(
+                        color = NeonGreen.copy(alpha = 0.2f),
+                        shape = CutCornerShape(4.dp),
+                        border = BorderStroke(1.dp, NeonGreen),
+                        modifier = Modifier
+                            .clickable { onBootFinished() }
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
+                    ) {
+                        Text(
+                            text = "INITIALIZATION COMPLETE // TAP TO ENTER",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = NeonGreenBright,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
+                        )
                     }
                 }
             }
+        }
+
+        // Bottom Progress Bar
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .align(Alignment.BottomCenter)
+                .padding(bottom = 36.dp, start = 24.dp, end = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            LinearProgressIndicator(
+                progress = { bootProgress },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(3.dp),
+                color = if (phase == BootPhase.DEDSEC_HIJACK_BOXES) NeonGreen else Color.White,
+                trackColor = Color.White.copy(alpha = 0.15f)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Text(
+                text = "TAP SCREEN TO SKIP",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = TextMuted,
+                    fontSize = 10.sp
+                )
+            )
         }
     }
 }

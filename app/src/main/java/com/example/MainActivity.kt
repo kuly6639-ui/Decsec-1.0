@@ -43,10 +43,10 @@ import com.example.ui.components.CallInterceptDialog
 import com.example.ui.components.DedsecHeaderBanner
 import com.example.ui.screens.BootScreen
 import com.example.ui.screens.CipherScreen
+import com.example.ui.screens.CtosControlPanelScreen
 import com.example.ui.screens.NetworkScannerScreen
 import com.example.ui.screens.ProfilerScreen
 import com.example.ui.screens.TerminalScreen
-import com.example.ui.screens.WidgetsScreen
 import com.example.ui.theme.CyberBlack
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.DedsecPink
@@ -97,7 +97,7 @@ fun DedsecApp(viewModel: HackerViewModel = viewModel()) {
         return
     }
 
-    // Handle back button: return to Terminal if on secondary tab
+    // Handle back button: return to ctOS Panel (tab 0) if on secondary tab
     BackHandler(enabled = selectedTab != 0) {
         viewModel.setSelectedTab(0)
     }
@@ -136,14 +136,23 @@ fun DedsecApp(viewModel: HackerViewModel = viewModel()) {
                 .padding(innerPadding)
         ) {
             when (selectedTab) {
-                0 -> TerminalScreen(
+                0 -> CtosControlPanelScreen(
+                    soundManager = viewModel.soundManager,
+                    networkInfo = networkInfo,
+                    nearbyDevices = nearbyDevices,
+                    botnetStatus = botnetStatus,
+                    onNavigateTab = { viewModel.setSelectedTab(it) },
+                    onTapNearbyDevice = { dev -> viewModel.tapDeviceCall(dev) },
+                    onExecuteCommand = { cmd -> viewModel.executeCommand(cmd) }
+                )
+                1 -> TerminalScreen(
                     terminalLines = terminalLines,
                     inputText = currentInput,
                     onInputChange = { viewModel.updatePromptInput(it) },
                     onExecuteInput = { viewModel.executeCurrentInput() },
                     onQuickCommand = { cmd -> viewModel.executeCommand(cmd) }
                 )
-                1 -> NetworkScannerScreen(
+                2 -> NetworkScannerScreen(
                     networkInfo = networkInfo,
                     nodes = networkNodes,
                     nearbyDevices = nearbyDevices,
@@ -153,31 +162,15 @@ fun DedsecApp(viewModel: HackerViewModel = viewModel()) {
                     onTapDeviceCall = { dev -> viewModel.tapDeviceCall(dev) },
                     onHackDevice = { dev -> viewModel.hackNearbyDevice(dev) }
                 )
-                2 -> ProfilerScreen(
+                3 -> ProfilerScreen(
                     targets = profilerTargets,
                     onDrainCrypto = { tgt -> viewModel.drainCrypto(tgt) },
                     onDistract = { tgt -> viewModel.distractTarget(tgt) }
                 )
-                3 -> CipherScreen(
+                4 -> CipherScreen(
                     cipherGame = cipherGame,
                     onCellClicked = { cell -> viewModel.onCipherCellClicked(cell) },
                     onReset = { viewModel.resetCipherGame() }
-                )
-                4 -> WidgetsScreen(
-                    botnetStatus = botnetStatus,
-                    networkInfo = networkInfo,
-                    nodes = networkNodes,
-                    onBoostBotnet = {
-                        viewModel.executeCommand("botnet")
-                        viewModel.soundManager.playAccessGranted()
-                    },
-                    onTriggerBlackout = {
-                        viewModel.triggerBlackout()
-                    },
-                    onQuickHackAction = { cmd ->
-                        viewModel.executeCommand(cmd)
-                        viewModel.setSelectedTab(0)
-                    }
                 )
             }
 
@@ -204,11 +197,11 @@ fun DedsecBottomNavigation(
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
+        NavigationItem("PANEL", Icons.Default.Dashboard, "nav_panel"),
         NavigationItem("TERMINAL", Icons.Default.Terminal, "nav_terminal"),
         NavigationItem("SCANNER", Icons.Default.Wifi, "nav_scanner"),
         NavigationItem("PROFILER", Icons.Default.Person, "nav_profiler"),
-        NavigationItem("CIPHER", Icons.Default.Memory, "nav_cipher"),
-        NavigationItem("HUD", Icons.Default.Dashboard, "nav_widgets")
+        NavigationItem("CIPHER", Icons.Default.Memory, "nav_cipher")
     )
 
     NavigationBar(
