@@ -9,14 +9,18 @@ enum class LineType {
     CYBER_BANNER,
     HEX_DUMP,
     SYSTEM,
-    GLITCH
+    GLITCH,
+    PING_PROGRESS
 }
 
 data class TerminalLine(
     val id: String = java.util.UUID.randomUUID().toString(),
     val text: String,
     val type: LineType = LineType.OUTPUT,
-    val timestamp: Long = System.currentTimeMillis()
+    val timestamp: Long = System.currentTimeMillis(),
+    val progress: Float = 0f,
+    val latencyMs: Long = 0L,
+    val isFlickering: Boolean = false
 )
 
 enum class NodeType {

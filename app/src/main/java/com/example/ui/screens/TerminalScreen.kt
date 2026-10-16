@@ -43,6 +43,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
@@ -58,10 +59,13 @@ import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.DedsecPink
 import com.example.ui.theme.NeonGreen
 import com.example.ui.theme.NeonGreenBright
+import com.example.ui.theme.NeonGreenDim
+import com.example.ui.theme.PureBlack
 import com.example.ui.theme.TerminalBorder
 import com.example.ui.theme.TerminalDark
 import com.example.ui.theme.TerminalSurface
 import com.example.ui.theme.TerminalSurfaceVariant
+import com.example.ui.theme.TextBlack
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextWhite
 import com.example.ui.theme.WarningAmber
@@ -98,7 +102,7 @@ fun TerminalScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(TerminalDark)
+            .background(PureBlack)
             .testTag("terminal_screen")
     ) {
         Column(
@@ -108,9 +112,9 @@ fun TerminalScreen(
         ) {
             // Terminal Header Bar
             Surface(
-                color = TerminalSurface,
+                color = PureBlack,
                 shape = CutCornerShape(topStart = 6.dp, topEnd = 6.dp),
-                border = BorderStroke(1.dp, TerminalBorder),
+                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.5f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -129,7 +133,7 @@ fun TerminalScreen(
                         )
                         Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "DEDSEC_SHELL // /dev/pts/1",
+                            text = "DECSEC 1.0 SHELL // /dev/pts/1",
                             style = MaterialTheme.typography.labelSmall.copy(
                                 color = NeonGreenBright,
                                 fontWeight = FontWeight.Bold
@@ -145,7 +149,7 @@ fun TerminalScreen(
 
             // Quick command chips row
             val quickChips = listOf(
-                "devices", "wiretap DEV-PH-02", "scan", "profile", "blackout", "reboot", "exploit CTOS-TRF-881", "ping 8.8.8.8", "decrypt", "botnet", "matrix", "clear"
+                "ping", "ping 8.8.8.8", "devices", "wiretap DEV-PH-02", "scan", "profile", "blackout", "reboot", "exploit CTOS-TRF-881", "decrypt", "botnet", "matrix", "clear"
             )
             Row(
                 modifier = Modifier
@@ -156,16 +160,18 @@ fun TerminalScreen(
             ) {
                 quickChips.forEach { chipCmd ->
                     Surface(
-                        color = TerminalSurfaceVariant,
+                        color = PureBlack,
                         shape = CutCornerShape(4.dp),
-                        border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.35f)),
+                        border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.6f)),
                         modifier = Modifier
                             .clickable { onQuickCommand(chipCmd) }
                             .testTag("chip_$chipCmd")
                     ) {
                         Text(
                             text = chipCmd,
-                            style = MaterialTheme.typography.labelSmall.copy(color = NeonGreenBright),
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = if (chipCmd.startsWith("ping")) NeonGreenBright else NeonGreen
+                            ),
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
@@ -178,8 +184,8 @@ fun TerminalScreen(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .background(CyberBlack, CutCornerShape(4.dp))
-                    .border(1.dp, TerminalBorder, CutCornerShape(4.dp))
+                    .background(PureBlack, CutCornerShape(4.dp))
+                    .border(1.dp, NeonGreen.copy(alpha = 0.35f), CutCornerShape(4.dp))
                     .padding(8.dp)
             ) {
                 items(terminalLines, key = { it.id }) { line ->
@@ -191,9 +197,9 @@ fun TerminalScreen(
 
             // Command Prompt Input
             Surface(
-                color = TerminalSurface,
+                color = PureBlack,
                 shape = CutCornerShape(bottomStart = 6.dp, bottomEnd = 6.dp),
-                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.7f)),
+                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.8f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -203,9 +209,9 @@ fun TerminalScreen(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "dedsec@ctos:~# ",
+                        text = "decsec@ctos:~# ",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            color = DedsecPink,
+                            color = NeonGreen,
                             fontWeight = FontWeight.Bold
                         )
                     )
@@ -229,7 +235,7 @@ fun TerminalScreen(
                         if (inputText.isEmpty()) {
                             Row(verticalAlignment = Alignment.CenterVertically) {
                                 Text(
-                                    text = "type 'help' or command...",
+                                    text = "type 'ping' or 'help'...",
                                     style = MaterialTheme.typography.bodyMedium.copy(
                                         color = TextMuted.copy(alpha = 0.6f)
                                     )
@@ -269,26 +275,149 @@ fun TerminalScreen(
 
 @Composable
 private fun TerminalLineRow(line: TerminalLine) {
-    val (textColor, fontWeight) = when (line.type) {
-        LineType.COMMAND -> Pair(NeonGreenBright, FontWeight.Bold)
-        LineType.CYBER_BANNER -> Pair(DedsecPink, FontWeight.Bold)
-        LineType.SUCCESS -> Pair(NeonGreen, FontWeight.Bold)
-        LineType.ERROR -> Pair(AlertRed, FontWeight.Bold)
-        LineType.WARNING -> Pair(WarningAmber, FontWeight.Normal)
-        LineType.HEX_DUMP -> Pair(CyberCyan, FontWeight.Normal)
-        LineType.SYSTEM -> Pair(TextWhite, FontWeight.Medium)
-        LineType.OUTPUT -> Pair(NeonGreen, FontWeight.Normal)
-        LineType.GLITCH -> Pair(DedsecPink, FontWeight.Black)
+    if (line.type == LineType.PING_PROGRESS) {
+        RetroFlickeringPingRow(line = line)
+        return
+    }
+
+    val textColor = when (line.type) {
+        LineType.COMMAND -> NeonGreenBright
+        LineType.CYBER_BANNER -> NeonGreenBright
+        LineType.SUCCESS -> NeonGreenBright
+        LineType.ERROR -> Color(0xFFFF2A4B)
+        LineType.WARNING -> NeonGreen
+        LineType.HEX_DUMP -> NeonGreenDim
+        LineType.SYSTEM -> NeonGreen
+        LineType.OUTPUT -> NeonGreen
+        LineType.GLITCH -> NeonGreenBright
+        LineType.PING_PROGRESS -> NeonGreenBright
     }
 
     Text(
         text = line.text,
         style = MaterialTheme.typography.bodySmall.copy(
             color = textColor,
-            fontWeight = fontWeight,
+            fontWeight = if (line.type == LineType.COMMAND || line.type == LineType.CYBER_BANNER || line.type == LineType.SUCCESS) FontWeight.Bold else FontWeight.Normal,
             fontSize = 12.sp,
             lineHeight = 16.sp
         ),
         modifier = Modifier.padding(vertical = 1.dp)
     )
+}
+
+/**
+ * Flickering, retro-styled network latency progress bar for the 'ping' command.
+ * Visualizes RTT latency, packet loss, and signal quality across connected nodes with
+ * authentic segmented LED blocks, phosphor flicker, and high-contrast green & black theme.
+ */
+@Composable
+private fun RetroFlickeringPingRow(line: TerminalLine) {
+    val infiniteTransition = rememberInfiniteTransition(label = "ping_flicker")
+    val flickerAlpha by infiniteTransition.animateFloat(
+        initialValue = 0.65f,
+        targetValue = 1.0f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(70, easing = LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "ping_flicker_alpha"
+    )
+
+    val signalPercent = (line.progress * 100).toInt().coerceIn(10, 100)
+    val latency = line.latencyMs
+    val totalSegments = 20
+    val activeSegments = (line.progress * totalSegments).toInt().coerceIn(1, totalSegments)
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
+            .background(PureBlack)
+            .border(1.dp, NeonGreen.copy(alpha = 0.4f * flickerAlpha), CutCornerShape(4.dp))
+            .padding(8.dp)
+    ) {
+        // Node Header & Latency Badge
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = line.text.substringBefore(" | RTT:"),
+                style = MaterialTheme.typography.bodySmall.copy(
+                    color = NeonGreenBright.copy(alpha = flickerAlpha),
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 11.sp
+                )
+            )
+
+            // High-contrast badge: Green background with Black text (or Black with Green text)
+            Surface(
+                color = NeonGreen,
+                shape = CutCornerShape(2.dp)
+            ) {
+                Text(
+                    text = "${latency}ms [ONLINE]",
+                    style = MaterialTheme.typography.labelSmall.copy(
+                        color = Color.Black,
+                        fontWeight = FontWeight.Black,
+                        fontSize = 10.sp
+                    ),
+                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(4.dp))
+
+        // Flickering Retro-styled Segmented Progress Bar
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(PureBlack)
+                .border(1.dp, NeonGreen.copy(alpha = 0.6f), CutCornerShape(2.dp))
+                .padding(3.dp),
+            horizontalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            for (seg in 0 until totalSegments) {
+                val isActive = seg < activeSegments
+                Box(
+                    modifier = Modifier
+                        .weight(1f)
+                        .height(10.dp)
+                        .background(
+                            if (isActive) NeonGreen.copy(alpha = flickerAlpha) else Color.Black
+                        )
+                        .border(
+                            0.5.dp,
+                            if (isActive) NeonGreenBright else NeonGreen.copy(alpha = 0.15f)
+                        )
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(3.dp))
+
+        // Signal telemetry text in green/black
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
+        ) {
+            Text(
+                text = "LATENCY: ${latency}ms // 0% LOSS // ${signalPercent}% QUALITY",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = NeonGreenDim,
+                    fontSize = 9.sp
+                )
+            )
+            Text(
+                text = if (latency < 20) "STATUS: OPTIMAL" else "STATUS: ROUTED",
+                style = MaterialTheme.typography.labelSmall.copy(
+                    color = NeonGreenBright,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 9.sp
+                )
+            )
+        }
+    }
 }

@@ -4,28 +4,28 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 
-private val DedsecColorScheme = darkColorScheme(
+private val DecSecColorScheme = darkColorScheme(
     primary = NeonGreen,
-    onPrimary = CyberBlack,
+    onPrimary = PureBlackText,
     primaryContainer = NeonGreenMuted,
     onPrimaryContainer = NeonGreenBright,
-    secondary = CyberCyan,
-    onSecondary = CyberBlack,
-    secondaryContainer = CyberCyanDim,
-    onSecondaryContainer = CyberCyan,
-    tertiary = DedsecPink,
-    onTertiary = TextWhite,
-    tertiaryContainer = DedsecPinkDim,
-    onTertiaryContainer = DedsecPink,
-    background = CyberBlack,
+    secondary = NeonGreenDim,
+    onSecondary = PureBlackText,
+    secondaryContainer = NeonGreenMuted,
+    onSecondaryContainer = NeonGreenBright,
+    tertiary = NeonGreenBright,
+    onTertiary = PureBlackText,
+    tertiaryContainer = NeonGreenMuted,
+    onTertiaryContainer = NeonGreen,
+    background = PureBlack,
     onBackground = NeonGreen,
-    surface = TerminalSurface,
+    surface = PureBlack,
     onSurface = NeonGreen,
     surfaceVariant = TerminalSurfaceVariant,
-    onSurfaceVariant = TextMuted,
+    onSurfaceVariant = TextGreenDim,
     outline = TerminalBorder,
     error = AlertRed,
-    onError = TextWhite
+    onError = PureBlackText
 )
 
 @Composable
@@ -33,7 +33,7 @@ fun MyApplicationTheme(
     content: @Composable () -> Unit
 ) {
     MaterialTheme(
-        colorScheme = DedsecColorScheme,
+        colorScheme = DecSecColorScheme,
         typography = CyberTypography,
         content = content
     )

@@ -127,7 +127,7 @@ fun CtosControlPanelScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(Color(0xFF070B0E))
+            .background(com.example.ui.theme.PureBlack)
             .testTag("ctos_control_panel_screen")
     ) {
         Column(
@@ -136,7 +136,7 @@ fun CtosControlPanelScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
-            // Top Bar: ctOS Control Panel Title & View System Report
+            // Top Bar: DecSec 1.0 // ctOS Control Panel Title & View System Report
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -144,19 +144,19 @@ fun CtosControlPanelScreen(
             ) {
                 Column {
                     Text(
-                        text = "ctOS Control Panel",
+                        text = "DecSec 1.0 // ctOS Control Panel",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            color = Color.White,
+                            color = NeonGreenBright,
                             fontFamily = FontFamily.SansSerif,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 22.sp,
+                            fontSize = 20.sp,
                             letterSpacing = 0.5.sp
                         )
                     )
                     Text(
-                        text = "EVERYTHING IS CONNECTED",
+                        text = "EVERYTHING IS CONNECTED // DEDSEC CORE",
                         style = MaterialTheme.typography.labelSmall.copy(
-                            color = Color.White.copy(alpha = 0.7f),
+                            color = NeonGreen.copy(alpha = 0.7f),
                             fontSize = 10.sp,
                             letterSpacing = 1.sp
                         )
@@ -624,7 +624,66 @@ fun CtosControlPanelScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Interactive Modules List (From the Screenshots)
+            // Interactive Modules / Tiles List with Electronic Sounds & Black/Green Styling
+            var selectedTileIndex by remember { mutableStateOf(0) }
+
+            // Navigation bar to move to another tile
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Surface(
+                    color = com.example.ui.theme.PureBlack,
+                    shape = CutCornerShape(4.dp),
+                    border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.7f)),
+                    modifier = Modifier.clickable {
+                        selectedTileIndex = if (selectedTileIndex > 0) selectedTileIndex - 1 else 5
+                        soundManager.playTileMoveSound()
+                    }
+                ) {
+                    Text(
+                        text = "< PREV TILE",
+                        style = MaterialTheme.typography.labelSmall.copy(color = NeonGreenBright),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+
+                Surface(
+                    color = NeonGreen,
+                    shape = CutCornerShape(4.dp)
+                ) {
+                    Text(
+                        text = "TILE ${selectedTileIndex + 1}/6 [ACTIVE]",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            color = com.example.ui.theme.PureBlackText,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
+                }
+
+                Surface(
+                    color = com.example.ui.theme.PureBlack,
+                    shape = CutCornerShape(4.dp),
+                    border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.7f)),
+                    modifier = Modifier.clickable {
+                        selectedTileIndex = if (selectedTileIndex < 5) selectedTileIndex + 1 else 0
+                        soundManager.playTileMoveSound()
+                    }
+                ) {
+                    Text(
+                        text = "NEXT TILE >",
+                        style = MaterialTheme.typography.labelSmall.copy(color = NeonGreenBright),
+                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(6.dp))
+
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 // 1. PEOPLE / PROFILER Module
                 CtosModuleRow(
@@ -632,10 +691,17 @@ fun CtosControlPanelScreen(
                     title = "PEOPLE",
                     subtitle = "HACK INTO THE ctOS PEOPLE DIRECTORY TO VIEW TRUE IDENTITY AND OCCUPATION",
                     badge = "PROFILER ONLINE",
-                    badgeColor = DedsecPink,
+                    badgeColor = NeonGreen,
+                    isSelected = selectedTileIndex == 0,
+                    soundManager = soundManager,
                     onClick = {
-                        soundManager.playTerminalBeep()
-                        onNavigateTab(2) // navigate to Profiler
+                        if (selectedTileIndex != 0) {
+                            selectedTileIndex = 0
+                            soundManager.playTileMoveSound()
+                        } else {
+                            soundManager.playTerminalBeep()
+                            onNavigateTab(3) // navigate to Profiler
+                        }
                     }
                 )
 
@@ -645,11 +711,18 @@ fun CtosControlPanelScreen(
                     title = "INBOX",
                     subtitle = "RECENT COMMUNICATIONS // UNREAD MESSAGES : 202",
                     badge = "202 NEW",
-                    badgeColor = WarningAmber,
+                    badgeColor = NeonGreen,
+                    isSelected = selectedTileIndex == 1,
+                    soundManager = soundManager,
                     onClick = {
-                        soundManager.playDataStream()
-                        onExecuteCommand("matrix")
-                        onNavigateTab(0)
+                        if (selectedTileIndex != 1) {
+                            selectedTileIndex = 1
+                            soundManager.playTileMoveSound()
+                        } else {
+                            soundManager.playDataStream()
+                            onExecuteCommand("matrix")
+                            onNavigateTab(1)
+                        }
                     }
                 )
 
@@ -660,13 +733,20 @@ fun CtosControlPanelScreen(
                     subtitle = "INTERCEPTED COMMUNICATIONS // MISSED CALLS : 0 // TAP TO LISTEN TO CALLS",
                     badge = "WIRETAP READY",
                     badgeColor = NeonGreen,
+                    isSelected = selectedTileIndex == 2,
+                    soundManager = soundManager,
                     onClick = {
-                        soundManager.playPhoneRing()
-                        val targetDev = nearbyDevices.firstOrNull { it.callTranscript.isNotEmpty() } ?: nearbyDevices.firstOrNull()
-                        if (targetDev != null) {
-                            onTapNearbyDevice(targetDev)
+                        if (selectedTileIndex != 2) {
+                            selectedTileIndex = 2
+                            soundManager.playTileMoveSound()
                         } else {
-                            onNavigateTab(1)
+                            soundManager.playPhoneRing()
+                            val targetDev = nearbyDevices.firstOrNull { it.callTranscript.isNotEmpty() } ?: nearbyDevices.firstOrNull()
+                            if (targetDev != null) {
+                                onTapNearbyDevice(targetDev)
+                            } else {
+                                onNavigateTab(2)
+                            }
                         }
                     }
                 )
@@ -677,23 +757,37 @@ fun CtosControlPanelScreen(
                     title = "NEARBY ELECTRONICS",
                     subtitle = "${nearbyDevices.size} DEVICES IN VICINITY (SMART TVS, PHONES, SPEAKERS, LAPTOPS)",
                     badge = "${nearbyDevices.size} NEARBY",
-                    badgeColor = CyberCyan,
+                    badgeColor = NeonGreen,
+                    isSelected = selectedTileIndex == 3,
+                    soundManager = soundManager,
                     onClick = {
-                        soundManager.playSonarPing()
-                        onNavigateTab(1) // navigate to Network Scanner
+                        if (selectedTileIndex != 3) {
+                            selectedTileIndex = 3
+                            soundManager.playTileMoveSound()
+                        } else {
+                            soundManager.playSonarPing()
+                            onNavigateTab(2) // navigate to Network Scanner
+                        }
                     }
                 )
 
                 // 5. COMMAND LINE CLI Module
                 CtosModuleRow(
                     icon = Icons.Default.Terminal,
-                    title = "DEDSEC SHELL",
+                    title = "DECSEC SHELL",
                     subtitle = "ROOT COMMAND LINE TERMINAL INTERFACE // CTOS ZERO-DAY ACCESS",
                     badge = "CLI READY",
                     badgeColor = NeonGreenBright,
+                    isSelected = selectedTileIndex == 4,
+                    soundManager = soundManager,
                     onClick = {
-                        soundManager.playTerminalBeep()
-                        onNavigateTab(0) // navigate to Terminal
+                        if (selectedTileIndex != 4) {
+                            selectedTileIndex = 4
+                            soundManager.playTileMoveSound()
+                        } else {
+                            soundManager.playTerminalBeep()
+                            onNavigateTab(1) // navigate to Terminal
+                        }
                     }
                 )
 
@@ -703,10 +797,17 @@ fun CtosControlPanelScreen(
                     title = "BUFFER CIPHER",
                     subtitle = "CIRCUIT MEMORY BYPASS MINIGAME // UNLOCK RESTRICTED CTOS KERNELS",
                     badge = "PUZZLE",
-                    badgeColor = WarningAmber,
+                    badgeColor = NeonGreen,
+                    isSelected = selectedTileIndex == 5,
+                    soundManager = soundManager,
                     onClick = {
-                        soundManager.playTerminalBeep()
-                        onNavigateTab(3) // navigate to Cipher minigame
+                        if (selectedTileIndex != 5) {
+                            selectedTileIndex = 5
+                            soundManager.playTileMoveSound()
+                        } else {
+                            soundManager.playTerminalBeep()
+                            onNavigateTab(4) // navigate to Cipher minigame
+                        }
                     }
                 )
             }
@@ -726,16 +827,21 @@ private fun CtosModuleRow(
     subtitle: String,
     badge: String,
     badgeColor: Color,
+    isSelected: Boolean,
+    soundManager: TerminalSoundManager,
     onClick: () -> Unit
 ) {
     Surface(
-        color = Color(0xFF0F1821),
+        color = com.example.ui.theme.PureBlack,
         shape = CutCornerShape(4.dp),
-        border = BorderStroke(1.dp, TerminalBorder),
+        border = BorderStroke(
+            if (isSelected) 1.5.dp else 1.dp,
+            if (isSelected) NeonGreenBright else NeonGreen.copy(alpha = 0.35f)
+        ),
         modifier = Modifier
             .fillMaxWidth()
             .clickable { onClick() }
-            .testTag("ctos_module_${title.lowercase()}")
+            .testTag("ctos_module_${title.lowercase().replace(" ", "_")}")
     ) {
         Row(
             modifier = Modifier
@@ -751,14 +857,17 @@ private fun CtosModuleRow(
                 Box(
                     modifier = Modifier
                         .size(36.dp)
-                        .background(CyberBlack, CutCornerShape(4.dp))
-                        .border(1.dp, badgeColor.copy(alpha = 0.6f), CutCornerShape(4.dp)),
+                        .background(
+                            if (isSelected) NeonGreen else com.example.ui.theme.PureBlack,
+                            CutCornerShape(4.dp)
+                        )
+                        .border(1.dp, NeonGreen, CutCornerShape(4.dp)),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = icon,
                         contentDescription = title,
-                        tint = badgeColor,
+                        tint = if (isSelected) com.example.ui.theme.PureBlackText else NeonGreen,
                         modifier = Modifier.size(20.dp)
                     )
                 }
@@ -766,18 +875,28 @@ private fun CtosModuleRow(
                 Spacer(modifier = Modifier.width(10.dp))
 
                 Column {
-                    Text(
-                        text = title,
-                        style = MaterialTheme.typography.bodyMedium.copy(
-                            color = Color.White,
+                    if (isSelected) {
+                        com.example.ui.components.HackerScrambleText(
+                            text = title,
+                            color = NeonGreenBright,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 13.sp,
+                            onLetterLoaded = { soundManager.playLetterLoadSound() }
                         )
-                    )
+                    } else {
+                        Text(
+                            text = title,
+                            style = MaterialTheme.typography.bodyMedium.copy(
+                                color = NeonGreen,
+                                fontWeight = FontWeight.Bold,
+                                fontSize = 13.sp
+                            )
+                        )
+                    }
                     Text(
                         text = subtitle,
                         style = MaterialTheme.typography.bodySmall.copy(
-                            color = TextMuted,
+                            color = if (isSelected) NeonGreen.copy(alpha = 0.85f) else TextMuted,
                             fontSize = 10.sp,
                             lineHeight = 13.sp
                         ),
@@ -789,14 +908,14 @@ private fun CtosModuleRow(
             Spacer(modifier = Modifier.width(8.dp))
 
             Surface(
-                color = badgeColor.copy(alpha = 0.15f),
+                color = if (isSelected) NeonGreen else com.example.ui.theme.PureBlack,
                 shape = CutCornerShape(3.dp),
-                border = BorderStroke(1.dp, badgeColor)
+                border = BorderStroke(1.dp, NeonGreen)
             ) {
                 Text(
                     text = badge,
                     style = MaterialTheme.typography.labelSmall.copy(
-                        color = badgeColor,
+                        color = if (isSelected) com.example.ui.theme.PureBlackText else NeonGreen,
                         fontWeight = FontWeight.Bold,
                         fontSize = 9.sp
                     ),

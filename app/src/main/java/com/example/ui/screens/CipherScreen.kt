@@ -34,23 +34,27 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.audio.TerminalSoundManager
 import com.example.model.CipherCell
 import com.example.model.CipherGame
 import com.example.ui.components.CrtScanlineOverlay
+import com.example.ui.components.HackerScrambleText
 import com.example.ui.theme.AlertRed
 import com.example.ui.theme.CyberBlack
 import com.example.ui.theme.CyberCyan
 import com.example.ui.theme.DedsecPink
 import com.example.ui.theme.NeonGreen
 import com.example.ui.theme.NeonGreenBright
+import com.example.ui.theme.NeonGreenDim
+import com.example.ui.theme.NeonGreenMuted
+import com.example.ui.theme.PureBlack
+import com.example.ui.theme.PureBlackText
 import com.example.ui.theme.TerminalBorder
-import com.example.ui.theme.TerminalDark
-import com.example.ui.theme.TerminalSurface
-import com.example.ui.theme.TerminalSurfaceVariant
 import com.example.ui.theme.TextMuted
 import com.example.ui.theme.TextWhite
 import com.example.ui.theme.WarningAmber
@@ -60,12 +64,13 @@ fun CipherScreen(
     cipherGame: CipherGame,
     onCellClicked: (CipherCell) -> Unit,
     onReset: () -> Unit,
+    soundManager: TerminalSoundManager = TerminalSoundManager(LocalContext.current),
     modifier: Modifier = Modifier
 ) {
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(TerminalDark)
+            .background(PureBlack)
             .testTag("cipher_screen")
     ) {
         Column(
@@ -77,8 +82,8 @@ fun CipherScreen(
             // Header
             Card(
                 shape = CutCornerShape(topStart = 8.dp, bottomEnd = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = TerminalSurface),
-                border = BorderStroke(1.dp, TerminalBorder),
+                colors = CardDefaults.cardColors(containerColor = PureBlack),
+                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.6f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -92,14 +97,17 @@ fun CipherScreen(
                         Icon(
                             imageVector = Icons.Default.Memory,
                             contentDescription = "Cipher",
-                            tint = CyberCyan,
+                            tint = NeonGreenBright,
                             modifier = Modifier.size(20.dp)
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
                             Text(
-                                text = "BUFFER OVERFLOW BYPASS",
-                                style = MaterialTheme.typography.titleMedium.copy(color = CyberCyan)
+                                text = "DECSEC 1.0 // BUFFER OVERFLOW",
+                                style = MaterialTheme.typography.titleMedium.copy(
+                                    color = NeonGreenBright,
+                                    fontWeight = FontWeight.Bold
+                                )
                             )
                             Text(
                                 text = "CIRCUIT MEMORY INJECTION PROTOCOL",
@@ -108,13 +116,20 @@ fun CipherScreen(
                         }
                     }
 
-                    Text(
-                        text = "MOVES: ${cipherGame.movesRemaining}",
-                        style = MaterialTheme.typography.labelMedium.copy(
-                            color = if (cipherGame.movesRemaining <= 2) AlertRed else WarningAmber,
-                            fontWeight = FontWeight.Bold
+                    Surface(
+                        color = if (cipherGame.movesRemaining <= 2) AlertRed else PureBlack,
+                        border = BorderStroke(1.dp, NeonGreen),
+                        shape = CutCornerShape(2.dp)
+                    ) {
+                        Text(
+                            text = "MOVES: ${cipherGame.movesRemaining}",
+                            style = MaterialTheme.typography.labelMedium.copy(
+                                color = if (cipherGame.movesRemaining <= 2) PureBlackText else NeonGreenBright,
+                                fontWeight = FontWeight.Bold
+                            ),
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 3.dp)
                         )
-                    )
+                    }
                 }
             }
 
@@ -123,14 +138,14 @@ fun CipherScreen(
             // Target Sequence Box
             Card(
                 shape = CutCornerShape(6.dp),
-                colors = CardDefaults.cardColors(containerColor = TerminalSurface),
-                border = BorderStroke(1.dp, DedsecPink.copy(alpha = 0.5f)),
+                colors = CardDefaults.cardColors(containerColor = PureBlack),
+                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.5f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(modifier = Modifier.padding(10.dp)) {
                     Text(
                         text = "REQUIRED CODE MATRIX SEQUENCE:",
-                        style = MaterialTheme.typography.labelSmall.copy(color = DedsecPink)
+                        style = MaterialTheme.typography.labelSmall.copy(color = NeonGreen)
                     )
 
                     Spacer(modifier = Modifier.height(6.dp))
@@ -139,14 +154,14 @@ fun CipherScreen(
                         cipherGame.targetSequence.forEachIndexed { idx, hex ->
                             val matched = idx < cipherGame.currentInput.size && cipherGame.currentInput[idx] == hex
                             Surface(
-                                color = if (matched) NeonGreen.copy(alpha = 0.2f) else CyberBlack,
+                                color = if (matched) NeonGreen else PureBlack,
                                 shape = CutCornerShape(4.dp),
-                                border = BorderStroke(1.dp, if (matched) NeonGreen else DedsecPink)
+                                border = BorderStroke(1.dp, NeonGreen)
                             ) {
                                 Text(
                                     text = hex,
                                     style = MaterialTheme.typography.bodyLarge.copy(
-                                        color = if (matched) NeonGreenBright else DedsecPink,
+                                        color = if (matched) PureBlackText else NeonGreenBright,
                                         fontWeight = FontWeight.Bold
                                     ),
                                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
@@ -162,8 +177,8 @@ fun CipherScreen(
             // Buffer input display
             Card(
                 shape = CutCornerShape(6.dp),
-                colors = CardDefaults.cardColors(containerColor = TerminalSurface),
-                border = BorderStroke(1.dp, TerminalBorder),
+                colors = CardDefaults.cardColors(containerColor = PureBlack),
+                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.4f)),
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -186,11 +201,11 @@ fun CipherScreen(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // 4x4 Code Matrix
+            // 4x4 Code Matrix Tiles
             Card(
                 shape = CutCornerShape(8.dp),
-                colors = CardDefaults.cardColors(containerColor = TerminalSurface),
-                border = BorderStroke(1.dp, TerminalBorder),
+                colors = CardDefaults.cardColors(containerColor = PureBlack),
+                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.6f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .aspectRatio(1f)
@@ -214,22 +229,24 @@ fun CipherScreen(
                                         (cipherGame.activeCol == null || cipherGame.activeCol == cIdx)
 
                                 val borderColor = when {
-                                    cell.isSelected -> NeonGreenMuted
+                                    cell.isSelected -> NeonGreenBright
                                     isClickable -> NeonGreen
-                                    isRowActive || isColActive -> CyberCyan.copy(alpha = 0.5f)
-                                    else -> TerminalBorder
+                                    isRowActive || isColActive -> NeonGreenDim
+                                    else -> NeonGreenMuted
                                 }
 
+                                // Background is strictly black, except active selected tile changes to green with black text
                                 val bgColor = when {
-                                    cell.isSelected -> TerminalSurfaceVariant
-                                    isClickable -> CyberBlack
-                                    else -> TerminalSurface
+                                    cell.isSelected -> NeonGreen
+                                    else -> PureBlack
                                 }
 
+                                // Text changes to black or green
                                 val textColor = when {
-                                    cell.isSelected -> TextMuted
+                                    cell.isSelected -> PureBlackText
                                     isClickable -> NeonGreenBright
-                                    else -> TextDim
+                                    isRowActive || isColActive -> NeonGreen
+                                    else -> TextMuted
                                 }
 
                                 Box(
@@ -237,7 +254,10 @@ fun CipherScreen(
                                         .size(64.dp)
                                         .background(bgColor, CutCornerShape(4.dp))
                                         .border(1.dp, borderColor, CutCornerShape(4.dp))
-                                        .clickable(enabled = isClickable) { onCellClicked(cell) }
+                                        .clickable(enabled = isClickable) {
+                                            soundManager.playTileMoveSound()
+                                            onCellClicked(cell)
+                                        }
                                         .testTag("cipher_cell_${rIdx}_${cIdx}"),
                                     contentAlignment = Alignment.Center
                                 ) {
@@ -245,7 +265,7 @@ fun CipherScreen(
                                         text = if (cell.isSelected) "--" else cell.hexValue,
                                         style = MaterialTheme.typography.bodyLarge.copy(
                                             color = textColor,
-                                            fontWeight = if (isClickable) FontWeight.Bold else FontWeight.Normal
+                                            fontWeight = if (isClickable || cell.isSelected) FontWeight.Bold else FontWeight.Normal
                                         )
                                     )
                                 }
@@ -260,26 +280,26 @@ fun CipherScreen(
             // Status feedback or reset
             if (cipherGame.isSolved) {
                 Surface(
-                    color = NeonGreen.copy(alpha = 0.2f),
+                    color = NeonGreen,
                     shape = CutCornerShape(6.dp),
-                    border = BorderStroke(1.dp, NeonGreen),
+                    border = BorderStroke(1.dp, NeonGreenBright),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Solved", tint = NeonGreenBright)
+                        Icon(imageVector = Icons.Default.CheckCircle, contentDescription = "Solved", tint = PureBlackText)
                         Spacer(modifier = Modifier.width(8.dp))
                         Column {
-                            Text("SECURITY BYPASSED!", style = MaterialTheme.typography.titleMedium.copy(color = NeonGreenBright))
-                            Text("+35,000 DEDSEC FOLLOWERS REWARDED", style = MaterialTheme.typography.bodySmall.copy(color = TextWhite))
+                            Text("SECURITY BYPASSED!", style = MaterialTheme.typography.titleMedium.copy(color = PureBlackText, fontWeight = FontWeight.Bold))
+                            Text("+35,000 DECSEC FOLLOWERS REWARDED", style = MaterialTheme.typography.bodySmall.copy(color = PureBlackText))
                         }
                     }
                 }
             } else if (cipherGame.isFailed) {
                 Surface(
-                    color = AlertRed.copy(alpha = 0.2f),
+                    color = PureBlack,
                     shape = CutCornerShape(6.dp),
                     border = BorderStroke(1.dp, AlertRed),
                     modifier = Modifier.fillMaxWidth()
@@ -298,26 +318,26 @@ fun CipherScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             Button(
-                onClick = onReset,
+                onClick = {
+                    soundManager.playTileMoveSound()
+                    onReset()
+                },
                 colors = ButtonDefaults.buttonColors(
-                    containerColor = TerminalSurfaceVariant,
+                    containerColor = PureBlack,
                     contentColor = NeonGreen
                 ),
                 shape = CutCornerShape(4.dp),
-                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.5f)),
+                border = BorderStroke(1.dp, NeonGreen.copy(alpha = 0.7f)),
                 modifier = Modifier
                     .fillMaxWidth()
                     .testTag("reset_cipher_button")
             ) {
                 Icon(imageVector = Icons.Default.LockReset, contentDescription = "Reset", modifier = Modifier.size(16.dp))
                 Spacer(modifier = Modifier.width(6.dp))
-                Text("RELOAD NEW MEMORY BUFFER")
+                Text("RELOAD NEW MEMORY BUFFER", color = NeonGreen)
             }
         }
 
         CrtScanlineOverlay(scanlineAlpha = 0.05f)
     }
 }
-
-private val TextDim = Color(0xFF283842)
-private val NeonGreenMuted = Color(0xFF0F3D1F)

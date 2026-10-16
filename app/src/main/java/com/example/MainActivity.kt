@@ -38,9 +38,11 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.audio.TerminalSoundManager
 import com.example.ui.components.BlackoutOverlay
 import com.example.ui.components.CallInterceptDialog
 import com.example.ui.components.DedsecHeaderBanner
+import com.example.ui.components.HackerScrambleText
 import com.example.ui.screens.BootScreen
 import com.example.ui.screens.CipherScreen
 import com.example.ui.screens.CtosControlPanelScreen
@@ -53,6 +55,8 @@ import com.example.ui.theme.DedsecPink
 import com.example.ui.theme.MyApplicationTheme
 import com.example.ui.theme.NeonGreen
 import com.example.ui.theme.NeonGreenBright
+import com.example.ui.theme.PureBlack
+import com.example.ui.theme.PureBlackText
 import com.example.ui.theme.TerminalBorder
 import com.example.ui.theme.TerminalDark
 import com.example.ui.theme.TerminalSurface
@@ -105,12 +109,12 @@ fun DedsecApp(viewModel: HackerViewModel = viewModel()) {
     Scaffold(
         modifier = Modifier
             .fillMaxSize()
-            .background(CyberBlack),
+            .background(PureBlack),
         topBar = {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(CyberBlack)
+                    .background(PureBlack)
                     .statusBarsPadding()
             ) {
                 DedsecHeaderBanner(
@@ -126,6 +130,7 @@ fun DedsecApp(viewModel: HackerViewModel = viewModel()) {
             DedsecBottomNavigation(
                 selectedTab = selectedTab,
                 onTabSelected = { viewModel.setSelectedTab(it) },
+                soundManager = viewModel.soundManager,
                 modifier = Modifier.navigationBarsPadding()
             )
         }
@@ -134,6 +139,7 @@ fun DedsecApp(viewModel: HackerViewModel = viewModel()) {
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
+                .background(PureBlack)
         ) {
             when (selectedTab) {
                 0 -> CtosControlPanelScreen(
@@ -170,7 +176,8 @@ fun DedsecApp(viewModel: HackerViewModel = viewModel()) {
                 4 -> CipherScreen(
                     cipherGame = cipherGame,
                     onCellClicked = { cell -> viewModel.onCipherCellClicked(cell) },
-                    onReset = { viewModel.resetCipherGame() }
+                    onReset = { viewModel.resetCipherGame() },
+                    soundManager = viewModel.soundManager
                 )
             }
 
@@ -194,6 +201,7 @@ fun DedsecApp(viewModel: HackerViewModel = viewModel()) {
 fun DedsecBottomNavigation(
     selectedTab: Int,
     onTabSelected: (Int) -> Unit,
+    soundManager: TerminalSoundManager,
     modifier: Modifier = Modifier
 ) {
     val items = listOf(
@@ -205,11 +213,11 @@ fun DedsecBottomNavigation(
     )
 
     NavigationBar(
-        containerColor = TerminalSurface,
+        containerColor = PureBlack,
         tonalElevation = 0.dp,
         modifier = modifier
             .fillMaxWidth()
-            .border(1.dp, TerminalBorder, CutCornerShape(topStart = 8.dp, topEnd = 8.dp))
+            .border(1.dp, NeonGreen.copy(alpha = 0.5f), CutCornerShape(topStart = 8.dp, topEnd = 8.dp))
             .testTag("dedsec_bottom_navigation")
     ) {
         items.forEachIndexed { index, item ->
@@ -225,21 +233,32 @@ fun DedsecBottomNavigation(
                     )
                 },
                 label = {
-                    Text(
-                        text = item.label,
-                        style = MaterialTheme.typography.labelSmall.copy(
+                    if (isSelected) {
+                        HackerScrambleText(
+                            text = item.label,
+                            color = PureBlackText,
+                            fontWeight = FontWeight.Bold,
                             fontSize = 9.sp,
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                            letterSpacing = 0.5.sp
+                            onLetterLoaded = { soundManager.playLetterLoadSound() }
                         )
-                    )
+                    } else {
+                        Text(
+                            text = item.label,
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                color = NeonGreen,
+                                fontSize = 9.sp,
+                                fontWeight = FontWeight.Normal,
+                                letterSpacing = 0.5.sp
+                            )
+                        )
+                    }
                 },
                 colors = NavigationBarItemDefaults.colors(
-                    selectedIconColor = NeonGreenBright,
-                    selectedTextColor = NeonGreenBright,
-                    indicatorColor = TerminalSurfaceVariant,
-                    unselectedIconColor = TextMuted,
-                    unselectedTextColor = TextMuted
+                    selectedIconColor = PureBlackText,
+                    selectedTextColor = PureBlackText,
+                    indicatorColor = NeonGreen,
+                    unselectedIconColor = NeonGreen.copy(alpha = 0.7f),
+                    unselectedTextColor = NeonGreen.copy(alpha = 0.7f)
                 ),
                 modifier = Modifier.testTag(item.testTag)
             )

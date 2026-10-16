@@ -3,7 +3,7 @@ package com.example.viewmodel
 import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.audio.TerminalSoundManager
+import com.example.audio.CentralAudioController
 import com.example.model.BotnetStatus
 import com.example.model.CipherCell
 import com.example.model.CipherGame
@@ -30,7 +30,8 @@ import kotlin.random.Random
 
 class HackerViewModel(application: Application) : AndroidViewModel(application) {
 
-    val soundManager = TerminalSoundManager(application)
+    val audioController = CentralAudioController(application)
+    val soundManager = audioController
     private val scannerEngine = NetworkScannerEngine(application)
 
     private val _terminalLines = MutableStateFlow<List<TerminalLine>>(emptyList())
@@ -81,34 +82,38 @@ class HackerViewModel(application: Application) : AndroidViewModel(application) 
 
     fun finishBoot() {
         _showBootScreen.value = false
-        soundManager.playTerminalBeep()
+        audioController.playTerminalExecute()
     }
 
     fun restartBoot() {
         _showBootScreen.value = true
-        soundManager.playBootBeep()
+        audioController.playBootRelaySound()
     }
 
     fun setSelectedTab(tab: Int) {
         _selectedTab.value = tab
-        soundManager.playTerminalBeep()
+        audioController.playTileMoveSound()
+    }
+
+    fun onTileMoved() {
+        audioController.playTileMoveSound()
     }
 
     fun updatePromptInput(text: String) {
         _currentPromptInput.value = text
-        soundManager.playKeyClick()
+        audioController.playTerminalKeystroke()
     }
 
     private fun initDedsecWelcome() {
         val banner = listOf(
             TerminalLine(text = "==========================================================", type = LineType.CYBER_BANNER),
-            TerminalLine(text = " [!] DEDSEC // cTOS 2.0 ZERO-DAY EXPLOIT TOOLKIT v2.4.9", type = LineType.CYBER_BANNER),
+            TerminalLine(text = " [!] DECSEC 1.0 // cTOS 2.0 ZERO-DAY EXPLOIT TOOLKIT", type = LineType.CYBER_BANNER),
             TerminalLine(text = " [!] OPERATIVE: MARCUS // BAY AREA CELL // STATUS: STEALTH", type = LineType.CYBER_BANNER),
             TerminalLine(text = " [!] JOIN THE RESISTANCE. WE ARE THE FUTURE.", type = LineType.CYBER_BANNER),
             TerminalLine(text = "==========================================================", type = LineType.CYBER_BANNER),
             TerminalLine(text = "[SYS] Initializing socket tunnels on ${_realNetworkInfo.value.interfaceName}...", type = LineType.SYSTEM),
             TerminalLine(text = "[NET] Local IP bound to ${_realNetworkInfo.value.localIp} via ${_realNetworkInfo.value.networkType}", type = LineType.SYSTEM),
-            TerminalLine(text = "[AUTH] Blume ctOS master certificate bypassed via buffer overflow.", type = LineType.SUCCESS),
+            TerminalLine(text = "[AUTH] Blume ctOS master certificate bypassed via DecSec 1.0 overflow.", type = LineType.SUCCESS),
             TerminalLine(text = "Type 'help' for command suite, or tap quick hack chips below.", type = LineType.OUTPUT)
         )
         _terminalLines.value = banner
@@ -367,12 +372,47 @@ class HackerViewModel(application: Application) : AndroidViewModel(application) 
                     }
                 }
                 "ping" -> {
-                    val target = if (arg.isNotEmpty()) arg else "ctos.blume.net"
-                    addLine(TerminalLine(text = "PING $target (56 data bytes)...", type = LineType.SYSTEM))
-                    delay(300)
-                    soundManager.playSonarPing()
-                    val result = scannerEngine.pingHost(target)
-                    addLine(TerminalLine(text = result, type = LineType.OUTPUT))
+                    val target = if (arg.isNotEmpty()) arg else "CONNECTED_NODES"
+                    addLine(TerminalLine(text = "[>] INITIATING NETWORK LATENCY SCAN ACROSS CONNECTED NODES...", type = LineType.SYSTEM))
+                    delay(180)
+
+                    val nodesToPing = if (target == "CONNECTED_NODES") {
+                        val base = mutableListOf(
+                            Triple("ctos.blume.net [MASTER BACKBONE]", 16L, 0.95f),
+                            Triple("192.168.1.1 [SUBNET GATEWAY]", 8L, 0.98f),
+                            Triple("CTOS-TRF-881 [TRAFFIC SCADA JUNCTION]", 24L, 0.88f),
+                            Triple("CTOS-PWR-092 [SUBSTATION RELAY]", 34L, 0.78f)
+                        )
+                        _nearbyDevices.value.take(2).forEach { dev ->
+                            base.add(Triple("${dev.name} [${dev.ip}]", Random.nextLong(12, 36), 0.92f))
+                        }
+                        base
+                    } else {
+                        val nearbyMatch = _nearbyDevices.value.find { it.name.lowercase().contains(arg) || it.id.lowercase() == arg }
+                        val name = nearbyMatch?.let { "${it.name} [${it.ip}]" } ?: target
+                        listOf(
+                            Triple(name, Random.nextLong(12, 42), 0.92f)
+                        )
+                    }
+
+                    for ((nodeName, latency, signal) in nodesToPing) {
+                        audioController.playPingPulse()
+                        delay(220)
+                        val barFill = (signal * 18).toInt()
+                        val barStr = "█".repeat(barFill) + "░".repeat(18 - barFill)
+                        addLine(
+                            TerminalLine(
+                                text = "PING $nodeName | RTT: ${latency}ms | [$barStr] ${(signal * 100).toInt()}% [ONLINE]",
+                                type = LineType.PING_PROGRESS,
+                                progress = signal,
+                                latencyMs = latency,
+                                isFlickering = true
+                            )
+                        )
+                    }
+                    delay(120)
+                    audioController.playAccessGranted()
+                    addLine(TerminalLine(text = "[✓] PING COMPLETE: ${nodesToPing.size} NODES LOCKED (0% PACKET LOSS // AVG RTT 18.2ms)", type = LineType.SUCCESS))
                 }
                 "exploit" -> {
                     if (arg.isEmpty()) {

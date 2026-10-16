@@ -5,6 +5,7 @@ import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.model.DeviceCategory
 import com.example.model.ExploitStatus
+import com.example.model.LineType
 import com.example.viewmodel.HackerViewModel
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -24,7 +25,7 @@ class ExampleRobolectricTest {
     fun testAppNameResource() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val appName = context.getString(R.string.app_name)
-        assertEquals("DedSec cTOS Hacker", appName)
+        assertEquals("DecSec 1.0", appName)
     }
 
     @Test
@@ -44,7 +45,7 @@ class ExampleRobolectricTest {
         // Test executing command
         viewModel.executeCommand("help")
         val lines = viewModel.terminalLines.value
-        assertTrue(lines.any { it.text.contains("DEDSEC") })
+        assertTrue(lines.any { it.text.contains("DEDSEC") || it.text.contains("DECSEC") })
 
         // Test whoami
         viewModel.executeCommand("whoami")
@@ -59,6 +60,37 @@ class ExampleRobolectricTest {
         // Test devices command
         viewModel.executeCommand("devices")
         assertTrue(viewModel.terminalLines.value.any { it.text.contains("NEARBY ELECTRONIC DEVICES") })
+    }
+
+    @Test
+    fun testPingCommandAndLatencyProgressBar() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val viewModel = HackerViewModel(app)
+
+        // Execute ping command
+        viewModel.executeCommand("ping")
+        val lines = viewModel.terminalLines.value
+        assertTrue(lines.any { it.text.contains("INITIATING NETWORK LATENCY SCAN") })
+        
+        // Execute ping to specific node
+        viewModel.executeCommand("ping 8.8.8.8")
+        val updatedLines = viewModel.terminalLines.value
+        assertTrue(updatedLines.any { it.text.contains("8.8.8.8") || it.type == LineType.PING_PROGRESS })
+    }
+
+    @Test
+    fun testTileMovementAndAudio() {
+        val app = ApplicationProvider.getApplicationContext<Application>()
+        val viewModel = HackerViewModel(app)
+
+        viewModel.setSelectedTab(1)
+        assertEquals(1, viewModel.selectedTab.value)
+
+        viewModel.setSelectedTab(3)
+        assertEquals(3, viewModel.selectedTab.value)
+
+        viewModel.onTileMoved()
+        assertTrue(viewModel.soundManager.isSoundEnabled)
     }
 
     @Test

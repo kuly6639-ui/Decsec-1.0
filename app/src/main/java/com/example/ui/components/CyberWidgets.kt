@@ -429,7 +429,7 @@ fun DedsecHeaderBanner(
             Column {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
-                        text = "[DEDSEC//OS v2.4]",
+                        text = "[DECSEC 1.0 // cTOS 2.0]",
                         style = MaterialTheme.typography.labelLarge.copy(color = NeonGreenBright)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
